@@ -1,9 +1,16 @@
 import { SurveyForm } from "@/components/SurveyForm";
 import { ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-background">
+      <div className="absolute top-4 right-4">
+        <Link to="/admin">
+          <Button variant="outline">Admin Panel</Button>
+        </Link>
+      </div>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
           {/* Header */}

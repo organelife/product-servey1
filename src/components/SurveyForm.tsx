@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { CheckCircle2, Plus, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().trim().min(2, { message: "Name must be at least 2 characters" }).max(100, { message: "Name must be less than 100 characters" }),
@@ -55,17 +56,48 @@ export function SurveyForm() {
     form.setValue("products", newProducts.filter(p => p.trim() !== ""));
   };
 
-  function onSubmit(values: FormValues) {
-    console.log("Survey submitted:", values);
-    setIsSubmitted(true);
-    toast.success("Survey submitted successfully!");
-    form.reset();
-    setProducts([""]);
-    
-    // Reset success state after 5 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-    }, 5000);
+  async function onSubmit(values: FormValues) {
+    try {
+      // Insert survey
+      const { data: surveyData, error: surveyError } = await supabase
+        .from("surveys")
+        .insert({
+          name: values.name,
+          mobile: values.mobile,
+          panchayath: values.panchayath,
+          ward: values.ward,
+          user_type: values.userType,
+        })
+        .select()
+        .single();
+
+      if (surveyError) throw surveyError;
+
+      // Insert survey items
+      const items = values.products.map(product => ({
+        survey_id: surveyData.id,
+        item_name: product,
+        item_type: "product", // You can enhance this to differentiate between product/service
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("survey_items")
+        .insert(items);
+
+      if (itemsError) throw itemsError;
+
+      setIsSubmitted(true);
+      toast.success("Survey submitted successfully!");
+      form.reset();
+      setProducts([""]);
+      
+      setTimeout(() => {
+        setIsSubmitted(false);
+      }, 5000);
+    } catch (error) {
+      console.error("Error submitting survey:", error);
+      toast.error("Failed to submit survey. Please try again.");
+    }
   }
 
   if (isSubmitted) {
